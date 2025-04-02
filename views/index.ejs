@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- </style> -->
+  <link rel="stylesheet" href="/stylesheets/style.css">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Document</title>
+
+  <style>
+    /* <style> */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    .videoblock {
+    position: fixed;
+    z-index: 222;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .local-video-container {
+    position: absolute;
+    bottom: 80px;
+    right: 16px;
+    width: 35%;
+    aspect-ratio: 16 / 9;
+  }
+  .controls-container {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 16px;
+    background-color: white;
+    padding: 12px;
+    border-radius: 9999px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+
+  @media (max-width: 640px) {
+    .local-video-container {
+      bottom: 100px;
+      right: 8px;
+      width: 100%;
+    }
+
+    .controls-container {
+      bottom: 8px;
+      padding: 8px;
+    }
+  }
+  @media (max-width: 480px) {
+    .local-video-container {
+      bottom: 120px;
+      right: 4px;
+      width: 100%;
+    }
+
+    .controls-container {
+      width: 100%;
+      justify-content: center;
+      bottom:10px;
+    }
+  }
+
+  </style>
+</head>
+<body class=" bg-violet-500 flex items-center justify-center relative">
+  <!-- videocall -->
+  <div class="fixed videoblock hidden z-[222] w-full h-svh">
+    <div class="flex-1 flex justify-center items-center bg-gray-50 rounded-l-lg relative">
+      <video id="remoteVideo" autoplay playsinline class="w-full h-full object-cover rounded-l-lg"></video>
+    </div>
+
+    
+    <div class="absolute bottom-10 right-10 w-1/4 h-1/4">
+      <video id="localVideo" autoplay playsinline muted class="w-full h-full object-cover rounded-lg shadow-lg"></video>
+      <div class="absolute bottom-2 right-2 bg-gray-800 text-white text-xs px-2 py-1 rounded">You</div>
+    </div>
+
+
+    <div
+      class="controls absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-4 bg-white p-3 rounded-full shadow-lg">
+      <button class="bg-gray-800 text-white h-14 w-14 text-2xl rounded-[50%] hover:bg-gray-700" id="micButton">
+        <i class="ri-mic-fill"></i>
+        <!-- <i class="ri-mic-off-fill"></i> -->
+      </button>
+
+      <button class="bg-gray-800 text-white h-14 w-14 text-2xl rounded-full hover:bg-gray-700" id="cameraButton">
+        <i class="ri-video-on-fill"></i>
+        <!-- <i class="ri-video-off-fill"></i> -->
+      </button>
+      <button class="bg-red-600 text-white text-2xl h-14 w-14 rounded-full hover:bg-red-500" id="hangup">
+        <i class="ri-close-large-fill"></i>
+      </button>
+    </div>
+  </div>
+  <!-- </div>  -->
+  <div id="incoming-call" class="fixed hidden  z-[222] w-full h-dvh bg-violet-400 bg-opacity-75">
+    <div class="bg-violet-200 p-8 rounded-md text-center  flex items-center justify-center">
+      <p class="mb-4">Incoming Call...</p>
+      <button id="accept-call" class="bg-green-500 text-white py-2 px-4 rounded-md">Accept</button>
+      <button id="reject-call" class="bg-red-500 text-white py-2 px-4 rounded-md ml-2">Reject</button>
+    </div>
+  </div>
+
+  <div id="video-call-container" class="fixed inset-0 z-50 bg-violet-400 bg-opacity-75 hidden">
+    <div class="videoblock w-full h-full">
+      <!-- Calling UI -->
+      <div id="calling-ui" class=" absolute inset-0 flex flex-col items-center justify-center text-white">
+        <div class="text-4xl mb-4">Calling...</div>
+        <div class="animate-pulse text-2xl mb-8">Waiting for the other person to join</div>
+        <button id="cancel-call" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full">
+          Cancel Call
+        </button>
+      </div>
+    </div>
+  </div>
+  <div id="custom-alert" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+      <div class="mt-3 text-center">
+        <h3 class="text-lg leading-6 font-medium text-gray-900" id="custom-alert-message"></h3>
+        <div class="mt-2 px-7 py-3">
+          <button id="custom-alert-ok"
+            class="px-4 py-2 bg-violet-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-violet-600 focus:outline-none focus:ring-2 focus:ring-blue-300">
+            OK
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chatpannel bg-white rounded-md w-fit p-4 shadow-lg shadow-violet-600">
+    <form id="startChat">
+      <div class="px-2 py-3 rounded text-center bg-violet-500 text-xl text-white">OMEGLE APP</div>
+      <input type="text" id="username" autocomplete="off" class="border-2 w-[100%] p-2 mt-2"
+        placeholder="enter your name" name="username" required>
+
+      <button class=" startbtn bg-violet-600 px-3 py-1 rounded-md text-xl text-white w-full mt-2"
+        type="submit">Start</button>
+    </form>
+    <button
+      class="privateChat p-2 bg-gray-100 text-xl text-violet-600 w-full border-2 mt-2 hover:bg-violet-600 hover:text-white">One-on-One
+      Chat</button>
+
+  </div>
+  <div class="chatRoom fixed inset-0 h-full w-full bg-violet-300  shadow-xl overflow-hidden hidden p-3">
+    <div class="chatRoom-inner flex flex-col h-full">
+
+      <div class="chat w-full h-full bg-violet-200 relative flex flex-col rounded-lg">
+        <div
+          class="nav h-14 bg-violet-100 p-3 flex justify-between items-center border-b border-violet-300 rounded-t-lg">
+          <h1 class="text-[4vw] sm:text-[2vw] sm:font-bold text-left capitalize">Chat Room</h1>
+          <h1 id="typing" class="hidden"><span id="typer">someone</span> is typing...</h1>
+          <button id="startVideoCall"
+            class=" bg-violet-500 text-white capitalize rounded text-xl py-1 px-3 hidden ">video
+            call</button>
+          <div id="user-list" class="relative bg-white p-2 rounded-md shadow-lg flex flex-col gap-4 ">
+            <h2 class="text-xs md:text-sm font-bold text-center cursor-pointer">Users Online (<span
+                id="user-count">0</span>)</h2>
+            <ul id="usernames"
+              class="mt-2 hidden absolute top-full right-0 px-4 text-center bg-white border border-gray-300 rounded-md shadow-lg">
+            </ul>
+          </div>
+
+        </div>
+        <div id="messages" class="flex-grow overflow-y-auto p-2 md:p-4 space-y-2 custom-scrollbar">
+          <p id="no-users-text" class="text-center text-violet-900 text-2xl ">Nobody is here to chat with...</p>
+
+        </div>
+        <form id="chat-form" class="flex p-2 gap-2 bg-violet-100 border-t rounded-b-lg border-gray-300">
+          <input type="text" id="message-input" class="flex-grow p-2  bg-violet-100 border-gray-200 rounded-l"
+            placeholder="Type your message..." autocomplete="off" required>
+          <button type="submit" class="bg-violet-600 text-white p-2 px-3 rounded">Send</button>
+        </form>
+      </div>
+    </div>
+
+
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"
+      integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO"
+      crossorigin="anonymous"></script>
+    <script>
+      const username = document.querySelector("#username");
+      const startBtn = document.querySelector("#startChat");
+      const privateChat = document.querySelector(".privateChat");
+      const onlineUsers = document.querySelector("#user-list");
+      const videoCall = document.querySelector("#startVideoCall");
+      const onlineuserList = document.querySelector("#user-list h2");
+      const userCount = document.getElementById("user-count");
+      const usernames = document.getElementById("usernames");
+      const messages = document.getElementById("messages");
+      const no_user = document.getElementById("no-users-text");
+      const input = document.getElementById("message-input");
+      const chatform = document.getElementById("chat-form");
+      const typing = document.getElementById("typing");
+      const typer = document.getElementById("typer");
+
+      let socket; // Define the socket at a higher scope
+      let typingTimeout;
+      let room;
+      socket = io();
+
+      //   private chat room
+      privateChat.addEventListener("click", async function () {
+        if (username.value.trim().length > 0) {
+          document.querySelector(".chatpannel").classList.add("hidden");
+          document.querySelector(".chatRoom").classList.remove("hidden");
+          onlineUsers.classList.add("hidden");
+          videoCall.classList.remove("hidden");
+
+          // socket = io(); // Create socket connection
+
+          socket.emit("joinRoom", username.value);
+
+          try {
+            room = await joinRoomAsync(socket);
+            no_user.classList.add("hidden");
+
+            typeMessageHandler(socket, room);
+
+            chatform.addEventListener("submit", function (e) {
+              e.preventDefault();
+              if (input.value.trim()) {
+                socket.emit("chat message", { room: room, msg: input.value.trim(), username: username.value });
+                attachMessage(input.value.trim());
+                input.value = "";
+              }
+            });
+            socket.on("message", function (data) {
+              receiveMessage(data);
+            })
+          } catch (error) {
+            console.error("Error joining room:", error);
+          }
+        } else {
+          alert("Please enter a valid username!");
+        }
+      });
+      //public chat room
+      startBtn.addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        if (username.value.trim().length > 0) {
+          document.querySelector(".chatpannel").classList.add("hidden");
+          document.querySelector(".chatRoom").classList.remove("hidden");
+
+          // socket = io();
+          socket.emit("public-room", username.value);
+          try {
+            room = await joinpublicRoomAsync(socket);
+
+            typeMessageHandler(socket, room);
+            // messageHandler(socket, room);
+            chatform.addEventListener("submit", function (e) {
+              e.preventDefault();
+              if (input.value.trim()) {
+                socket.emit("chat message", { room: room, msg: input.value.trim(), username: username.value });
+                attachMessage(input.value.trim());
+                input.value = "";
+              }
+            });
+            socket.on("message", function (data) {
+              receiveMessage(data);
+            })
+          } catch (error) {
+            console.error("Error joining room:", error);
+          }
+          onlineuserList.addEventListener("click", function () {
+            usernames.classList.toggle("hidden");
+          });
+        }
+        else {
+          alert("Please enter a valid username!");
+        }
+      });
+
+
+      function joinRoomAsync(socket) {
+        return new Promise((resolve, reject) => {
+          socket.on("room joined", function (roomName) {
+            if (roomName) {
+              resolve(roomName); // Resolve the promise with the room name
+            } else {
+              reject("Failed to join room"); // Reject the promise if no room name
+            }
+          });
+        });
+      }
+      function joinpublicRoomAsync(socket) {
+        return new Promise((resolve, reject) => {
+          // Listen for the "user-list" event for global chat
+          socket.on("user-list", function (data) {
+            const users = data.users;
+            const roomName = data.room; // Extract the room name from the data
+
+            userCount.textContent = users.length;
+
+            usernames.innerHTML = ""; // Clear the current user list
+
+            if (users.length <= 1) {
+              no_user.classList.remove("hidden");
+            } else {
+              no_user.classList.add("hidden");
+            }
+            users.forEach((user) => {
+              const li = document.createElement("li");
+              li.textContent = user.name;
+              li.className = "text-violet-500 hover:text-violet-700 h-auto";
+              li.dataset.userId = user.id;
+              usernames.appendChild(li);
+            });
+
+            if (roomName) {
+              resolve(roomName);
+            } else {
+              reject("Failed to join room");
+            }
+          });
+        });
+      }
+      function typeMessageHandler(socket, room) {
+        input.addEventListener("input", () => {
+          socket.emit("typing", { user: username.value, room: room });
+
+          clearTimeout(typingTimeout);
+          typingTimeout = setTimeout(() => {
+            socket.emit("stop typing", { user: username.value, room: room });
+          }, 1000);
+        });
+
+        socket.on("typing", (data) => {
+          typer.textContent = `${data.username}`;
+          typing.classList.remove("hidden");
+        });
+
+        socket.on("stop typing", () => {
+          typing.classList.add("hidden");
+        });
+      }
+      function attachMessage(msg) {
+        const msgDiv = document.createElement("div");
+
+        msgDiv.className = "msg ml-auto w-fit bg-violet-500 text-white px-2 py-1 rounded-md";
+        msgDiv.innerHTML = `<span class="user font-bold">You: </span>${msg}`;
+
+        messages.appendChild(msgDiv);
+        messages.scrollTop = messages.scrollHeight;
+      }
+      function receiveMessage(data) {
+        const msgDiv = document.createElement("div");
+        msgDiv.className = "msg self-start w-fit bg-violet-100 text-black px-2 py-1 rounded-md";
+        msgDiv.innerHTML = `<span class="user font-bold">${data.username}: </span>${data.msg}`;
+
+
+        messages.appendChild(msgDiv);
+        messages.scrollTop = messages.scrollHeight;
+      }
+      //webrtc
+      // socket=io()
+
+      let localStream;
+      let remoteStream;
+      let peerConnection;
+      let incall = false;
+
+      let isAudioMuted = false;
+      let isVideoOff = false;
+
+      function toggleAudio() {
+        if (localStream) {
+          const audioTrack = localStream.getAudioTracks()[0];
+          if (audioTrack) {
+            isAudioMuted = !isAudioMuted;
+            audioTrack.enabled = !isAudioMuted;
+            const micIcon = document.getElementById('micIcon');
+            if (isAudioMuted) {
+              micButton.innerHTML = '<i class="ri-mic-off-fill"></i>';
+              // micButton.classList.add('bg-red-500');
+            } else {
+              micButton.innerHTML = '<i class="ri-mic-fill"></i>';
+              // micButton.classList.remove('bg-red-500');
+            }
+          }
+        }
+      }
+
+      function toggleVideo() {
+        if (localStream) {
+          const videoTrack = localStream.getVideoTracks()[0];
+          if (videoTrack) {
+            isVideoOff = !isVideoOff;
+            videoTrack.enabled = !isVideoOff;
+            const cameraIcon = document.getElementById('cameraIcon');
+            if (isVideoOff) {
+              cameraButton.innerHTML = '<i class="ri-video-off-fill"></i>';
+              cameraButton.classList.remove('bg-red-500');
+            } else {
+              cameraButton.innerHTML = '<i class="ri-video-on-fill"></i>';
+              cameraButton.classList.add('bg-red-500');
+            }
+          }
+        }
+      }
+      const rtcSettings = {
+        iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+      };
+
+      document.getElementById('micButton').addEventListener('click', toggleAudio);
+      document.getElementById('cameraButton').addEventListener('click', toggleVideo);
+
+      const initialize = async () => {
+        if (incall) {
+          console.log("A call is already in progress.");
+          return;
+        }
+        socket.on("signalingMessage", handleSignalingMessage);
+
+        try {
+          localStream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+            video: true
+          })
+          document.querySelector("#localVideo").srcObject = localStream;
+          document.querySelector("#localVideo").style.display = "block";
+          document.getElementById('calling-ui').classList.add("hidden");
+
+
+          initiateOffer();
+
+          incall = true;
+        }
+        catch (err) {
+          console.log("Rejected by browser" + err);
+        }
+      }
+
+      const initiateOffer = async () => {
+        await createPeerConnection();
+        try {
+          const offer = await peerConnection.createOffer();
+          await peerConnection.setLocalDescription(offer);
+          socket.emit("signalingMessage", {
+            room,
+            message: JSON.stringify({
+              type: "offer",
+              offer
+            })
+          })
+        }
+        catch (err) {
+          console.log("error in creating offer" + err);
+          showCustomAlert("Failed to initiate call. Please try again.");
+
+        }
+      }
+
+
+      const createPeerConnection = () => {
+
+        try {
+
+          peerConnection = new RTCPeerConnection(rtcSettings);
+
+          remoteStream = new MediaStream();
+
+          document.querySelector("#remoteVideo").srcObject = remoteStream;
+          document.querySelector("#remoteVideo").style.display = "block";
+          // document.querySelector("#localVideo").classList.add("smallFrame");
+
+          localStream.getTracks().forEach(track => {
+            peerConnection.addTrack(track, localStream);
+          })
+
+          peerConnection.ontrack = (event) => {
+            event.streams[0].getTracks().forEach(track => {
+              // console.log(track)
+              remoteStream.addTrack(track);
+            })
+          }
+          // Handle ICE candidates
+          peerConnection.onicecandidate = (event) => {
+            if (event.candidate) {
+              console.log("Sending Ice Candidates");
+
+              socket.emit("signalingMessage", {
+                room,
+                message: JSON.stringify({
+                  type: "candidate",
+                  candidate: event.candidate
+                })
+              })
+            }
+          }
+
+          // Handle connection state changes
+          peerConnection.onconnectionstatechange = () => {
+            console.log("connection state change hui ", peerConnection.connectionState);
+            //             if (peerConnection.connectionState === "disconnected" || 
+            //     peerConnection.connectionState === "failed" || 
+            //     peerConnection.connectionState === "closed") {
+            //     hangup(); 
+            // }
+
+          }
+        }
+        catch (err) {
+          console.log("error creating peerConnection")
+        }
+      };
+
+
+      const handleSignalingMessage = async (message) => {
+        const { type, offer, answer, candidate } = JSON.parse(message);
+        if (type === "offer") handleOffer(offer);
+        if (type === "answer") handleAnswer(answer);
+        if (type === "candidate" && peerConnection.signalingState === "stable") {
+          try {
+            await peerConnection.addIceCandidate(candidate);
+            console.log("candidate added ", candidate)
+          }
+
+          catch (error) {
+            console.log(error);
+          }
+        }
+        if (type === "hangup") {
+          hangup();
+          showChatRoom();
+          showCustomAlert("Call ended.")
+          socket.off("signalingMessage", handleSignalingMessage);
+
+        }
+      }
+      function showCustomAlert(message) {
+        const alertElement = document.getElementById('custom-alert');
+        const messageElement = document.getElementById('custom-alert-message');
+        const okButton = document.getElementById('custom-alert-ok');
+
+        messageElement.textContent = message;
+        alertElement.classList.remove('hidden');
+
+        okButton.onclick = function () {
+          alertElement.classList.add('hidden');
+        };
+      }
+
+      const handleOffer = async (offer) => {
+        try {
+          await createPeerConnection();
+
+          await peerConnection.setRemoteDescription(offer);
+          const answer = await peerConnection.createAnswer();
+          await peerConnection.setLocalDescription(answer);
+          socket.emit("signalingMessage", { room, message: JSON.stringify({ type: "answer", answer }) });
+          incall = true;
+        }
+        catch (error) {
+          console.log("failed to handle offer");
+
+        }
+      }
+
+      const handleAnswer = async (answer) => {
+        try {
+          if (!(answer instanceof RTCSessionDescription)) {
+            answer = new RTCSessionDescription(answer);
+          }
+          if (peerConnection.signalingState === "stable") {
+            console.log("Connection is in stable state, resetting the connection.");
+            await hangup(); // Close existing connection
+            await createPeerConnection(); // Recreate the peer connection
+          }
+          console.log("answer received.")
+          console.log("answer at handleAnswer", answer)
+          console.log("Answer type:", typeof answer);
+          console.log("Answer instanceof RTCSessionDescription:", answer instanceof RTCSessionDescription);
+
+          await peerConnection.setRemoteDescription(answer);
+          console.log("answer added as remoteStream", answer);
+        }
+        catch (error) {
+          console.log("failed to handle answer", error);
+
+        }
+      }
+
+      videoCall.addEventListener("click", function () {
+        document.getElementById('video-call-container').classList.remove("hidden");
+        document.getElementById('calling-ui').classList.remove("hidden"); // Add this line
+
+        socket.emit("startVideoCall", room)
+      })
+      socket.on('callCancelled', function () {
+        resetCallState();
+        document.querySelector("#incoming-call").classList.add("hidden");
+        showCustomAlert("missed video call!")
+      });
+
+      socket.on("incomingCall", function () {
+        console.log("hey");
+        document.querySelector("#incoming-call").classList.remove("hidden");
+      })
+
+      document.querySelector("#accept-call").addEventListener("click", function () {
+        document.querySelector("#incoming-call").classList.add("hidden");
+        initialize();
+        document.querySelector(".videoblock").classList.remove("hidden");
+        socket.emit("acceptCall", room)
+      })
+
+      socket.on("callAccepted", function () {
+        initialize();
+        document.querySelector(".videoblock").classList.remove("hidden");
+      })
+
+      document.querySelector("#reject-call")
+        .addEventListener("click", function () {
+          document.querySelector("#incoming-call").classList.add("hidden");
+          socket.emit("rejectCall", room)
+          incall =false;
+        })
+
+      socket.on("callRejected", function () {
+        showCustomAlert("call rejected");
+        document.getElementById('video-call-container').classList.add("hidden");
+
+        incall = false;
+
+      })
+      document.getElementById('cancel-call').addEventListener('click', function () {
+        cancelCall();
+      });
+      function cancelCall() {
+        if (incall === false) {
+          socket.emit('cancelCall', room);
+          resetCallState();
+          document.getElementById('video-call-container').classList.add('hidden');
+          document.querySelector('.chatRoom').classList.remove('hidden');
+        }
+
+      }
+
+
+
+
+      document.querySelector("#hangup")
+        .addEventListener("click", function () {
+          hangup();
+          // showChatRoom();
+        })
+      // Add this function to reset the call state
+      function resetCallState() {
+        incall = false;
+        peerConnection = null;
+        localStream = null;
+        remoteStream = null;
+        document.querySelector("#localVideo").srcObject = null;
+        document.querySelector("#remoteVideo").srcObject = null;
+      }
+
+      // Modify the hangup function
+      function hangup() {
+        if (peerConnection) {
+          peerConnection.close();
+        }
+        if (localStream) {
+          localStream.getTracks().forEach(track => track.stop());
+        }
+
+        document.querySelector(".videoblock").classList.add("hidden");
+        socket.emit("signalingMessage", { room, message: JSON.stringify({ type: "hangup" }) });
+
+        resetCallState();
+        showChatRoom();
+        console.log("hangup: ", peerConnection, localStream, remoteStream);
+      }
+
+      // ... existing code ...
+      function showChatRoom() {
+        document.querySelector(".chatRoom").classList.remove("hidden");
+        document.getElementById('video-call-container').classList.add("hidden");
+      }
+
+    </script>
+
+</body>
+</html>

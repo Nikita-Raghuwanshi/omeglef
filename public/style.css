@@ -1,0 +1,31 @@
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+html,body{
+    height: 100%;
+    width: 100%;
+}
+@layer utilities {
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 10px;
+    }
+  
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background-color: #3490dc;
+      border-radius: 10px;
+      border: 2px solid #ffffff;
+    }
+  
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background-color: #f1f1f1;
+      border-radius: 10px;
+    }
+    
+    .custom-scrollbar {
+      scrollbar-width: thin;
+      scrollbar-color: #3490dc #f1f1f1;
+    }
+  }
+  
